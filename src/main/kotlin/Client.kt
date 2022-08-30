@@ -27,8 +27,9 @@ private val json = Json {
 }
 
 fun Node.body() {
+    val name = "peashooter"
+    val animationIndex = 0
     append {
-        val name = "peashooter"
         window.fetch(Request("$name/$name.pam.json")).then { response ->
             response.text().then { text ->
                 val data = json.decodeFromString<PamData>(text)
@@ -39,13 +40,14 @@ fun Node.body() {
                     images[it.frame[0].append[0].resource].name
                 }
                 val resMap = mutableMapOf<Int, Int>()
-                data.mainSprite.frame.forEach { frame ->
-                    resMap += frame.append.associate {
-                        it.index to it.resource
-                    }
-                }
                 val animations = data.mainSprite.frame.map { it.label }.filterNot { it == null }
-                val animationIndex = 0
+                val startFrameIndex = data.mainSprite.frame.indexOfFirst {
+                    it.label == animations[animationIndex]
+                }
+                val endFrameIndex = data.mainSprite.frame.indexOfFirst {
+                    it.label == animations.getOrElse(animationIndex + 1) {}
+                }.takeIf { it != -1 } ?: data.mainSprite.frame.lastIndex
+                val frameCount = endFrameIndex - startFrameIndex - 1
                 val initialFrame = data.mainSprite.frame.indexOfFirst { it.label == animations[animationIndex] }
                 var currentFrame = initialFrame
                 val frames = mutableMapOf<Int, Change>()
@@ -54,31 +56,35 @@ fun Node.body() {
                         append {
                             div("frame_$name") {
                                 val frame = data.mainSprite.frame[currentFrame]
-                                frame.change.forEach { change ->
-                                    frames[change.index] = change
+                                resMap += frame.append.associate {
+                                    it.index to it.resource
+                                }
+                                frames += frame.change.associateBy { it.index }
+                                frame.remove.forEach {
+                                    frames.remove(it.index)
                                 }
                                 frames.forEach { (index, change) ->
-                                    val src = sprites[resMap.getValue(index)]
-                                    val image = images.find { it.name == src }!!
-                                    val transform =
-                                        TransformData.parse(image.transform) then TransformData.parse(change.transform)
-                                    style {
-                                        unsafe {
-                                            raw(".main_frame_${currentFrame}_$index { width: ${image.size[0] * image.transform[0]}px; height: ${image.size[1] * image.transform[3]}px; ${transform.toCssTransformString()} transform-origin: ${-image.transform[4]}px ${-image.transform[5]}px; }")
+                                    if (resMap.containsKey(index) && change.color?.getOrNull(3) != 0.0) {
+                                        val src = sprites[resMap.getValue(index)]
+                                        val image = images.find { it.name == src }!!
+                                        val transform =
+                                            TransformData.parse(image.transform) then TransformData.parse(change.transform)
+                                        style {
+                                            unsafe {
+                                                raw(".main_frame_${currentFrame}_$index { width: ${image.size[0] * image.transform[0]}px; height: ${image.size[1] * image.transform[3]}px; ${transform.toCssTransformString()} transform-origin: ${-image.transform[4]}px ${-image.transform[5]}px; }")
+                                            }
                                         }
+                                        img(
+                                            src = src,
+                                            classes = "image main_frame_${currentFrame}_$index"
+                                        )
                                     }
-                                    img(
-                                        src = src,
-                                        classes = "image main_frame_${currentFrame}_$index"
-                                    )
                                 }
                             }
                         }
-                        delay((1000f / data.frameRate).toLong())
-                        repeat(2) {
-                            window.document.querySelector(".frame_$name")?.remove()
-                        }
-                        currentFrame = initialFrame + (currentFrame + 1).mod(data.frameRate)
+                        delay(1000L / data.frameRate)
+                        window.document.querySelector(".frame_$name")?.remove()
+                        currentFrame = initialFrame + (currentFrame + 1).mod(frameCount)
                     }
                 }
             }
