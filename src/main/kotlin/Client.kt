@@ -61,8 +61,7 @@ fun Node.body() {
                                     val src = sprites[resMap.getValue(index)]
                                     val image = images.find { it.name == src }!!
                                     val transform =
-                                        TransformData.parse(image.transform) then
-                                            TransformData.parse(change.transform)
+                                        TransformData.parse(image.transform) then TransformData.parse(change.transform)
                                     style {
                                         unsafe {
                                             raw(".main_frame_${currentFrame}_$index { width: ${image.size[0] * image.transform[0]}px; height: ${image.size[1] * image.transform[3]}px; ${transform.toCssTransformString()} transform-origin: ${-image.transform[4]}px ${-image.transform[5]}px; }")
