@@ -1,6 +1,5 @@
 import com.kyant.pamh.data.Change
 import com.kyant.pamh.data.PamData
-import com.kyant.pamh.legacydata.LegacyPamData
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
@@ -18,63 +17,13 @@ import org.w3c.dom.Node
 import org.w3c.fetch.Request
 
 fun main() {
-    val legacyMode = false
-    window.onload = {
-        if (legacyMode) document.body?.legacyBody()
-        else document.body?.body()
-    }
+    window.onload = { document.body?.body() }
 }
 
 private val json = Json {
     isLenient = true
     ignoreUnknownKeys = true
     coerceInputValues = true
-}
-
-fun Node.legacyBody() {
-    append {
-        val name = "peashooter"
-        window.fetch(Request("$name/$name.css.json")).then { response ->
-            response.text().then { text ->
-                val data = json.decodeFromString<LegacyPamData>(text)
-                val images = data.img.map {
-                    it.copy(src = "./$name/${it.src}.png")
-                }
-                val initialFrame = 0
-                var currentFrame = initialFrame
-                CoroutineScope(Dispatchers.Main).launch {
-                    while (true) {
-                        append {
-                            div("frame_$name") {
-                                val frames = data.layer
-                                    .filter { it.range == listOf(0, 30) }
-                                    .filter { it.id.size <= 4 }
-                                    .map { it.id.last() to it.frame[currentFrame] }
-                                frames.forEachIndexed { i, (index, change) ->
-                                    val image = images[index]
-                                    val transform = change.matrix
-                                    style {
-                                        unsafe {
-                                            raw(".main_frame_${currentFrame}_$i { width: ${image.sz[0]}px; height: ${image.sz[1]}px; transform: matrix(${transform.joinToString()}); transform-origin: ${-image.origin[0]}px ${-image.origin[1]}px; }")
-                                        }
-                                    }
-                                    img(
-                                        src = image.src,
-                                        classes = "image main_frame_${currentFrame}_$i"
-                                    )
-                                }
-                            }
-                        }
-                        delay((1000f / data.frameRate).toLong())
-                        repeat(2) {
-                            window.document.querySelector(".frame_$name")?.remove()
-                        }
-                        currentFrame = initialFrame + (currentFrame + 1).mod(data.frameRate)
-                    }
-                }
-            }
-        }
-    }
 }
 
 fun Node.body() {
