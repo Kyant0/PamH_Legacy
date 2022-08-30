@@ -28,7 +28,7 @@ private val json = Json {
 
 fun Node.body() {
     val name = "peashooter"
-    val animationIndex = 1
+    val animationIndex = 0
     append {
         window.fetch(Request("$name/$name.pam.json")).then { response ->
             response.text().then { text ->
