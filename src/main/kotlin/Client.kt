@@ -84,7 +84,7 @@ fun Node.body() {
                                             TransformData.parse(image.transform) then TransformData.parse(change.transform)
                                         style {
                                             unsafe {
-                                                raw(".main_frame_${currentFrame}_$index { width: ${image.size[0] * image.transform[0]}px; height: ${image.size[1] * image.transform[3]}px; ${transform.toCssTransformString()} transform-origin: ${-image.transform[4]}px ${-image.transform[5]}px; filter: brightness(${change.color?.average()}); }")
+                                                raw(".main_frame_${currentFrame}_$index { width: ${image.size[0] * image.transform[0]}px; height: ${image.size[1] * image.transform[3]}px; ${transform.toCssTransformString()} transform-origin: ${-image.transform[4]}px ${-image.transform[5]}px; filter: brightness(${change.color?.average() ?: 1}); }")
                                             }
                                         }
                                         img(
