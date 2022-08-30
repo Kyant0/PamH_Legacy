@@ -54,13 +54,17 @@ fun Node.body() {
                 }.takeIf { it != -1 } ?: data.mainSprite.frame.lastIndex
                 val frameCount = endFrameIndex - startFrameIndex - 1
                 val initialFrame = data.mainSprite.frame.indexOfFirst { it.label == animations[animationIndex] }
-                var currentFrame = initialFrame
+                var localCurrentFrame = 0
                 val frames = mutableMapOf<Int, Change>()
                 CoroutineScope(Dispatchers.Main).launch {
                     while (true) {
+                        val currentFrame = initialFrame + localCurrentFrame
                         append {
                             div("frame_$name") {
                                 val frame = data.mainSprite.frame[currentFrame]
+                                if (currentFrame == initialFrame) {
+                                    frames.clear()
+                                }
                                 frames += frame.change.associateBy { it.index }
                                 frame.remove.forEach {
                                     frames.remove(it.index)
@@ -86,7 +90,8 @@ fun Node.body() {
                         }
                         delay(1000L / data.frameRate)
                         window.document.querySelector(".frame_$name")?.remove()
-                        currentFrame = initialFrame + (currentFrame + 1).mod(frameCount)
+                        localCurrentFrame += 1
+                        localCurrentFrame = localCurrentFrame.mod(frameCount)
                     }
                 }
             }
