@@ -65,7 +65,13 @@ fun Node.body() {
                                 if (currentFrame == initialFrame) {
                                     frames.clear()
                                 }
-                                frames += frame.change.associateBy { it.index }
+                                frame.change.forEach {
+                                    if (frames.containsKey(it.index)) {
+                                        frames[it.index] = it.copy(color = it.color ?: frames[it.index]?.color)
+                                    } else {
+                                        frames[it.index] = it
+                                    }
+                                }
                                 frame.remove.forEach {
                                     frames.remove(it.index)
                                 }
@@ -78,7 +84,7 @@ fun Node.body() {
                                             TransformData.parse(image.transform) then TransformData.parse(change.transform)
                                         style {
                                             unsafe {
-                                                raw(".main_frame_${currentFrame}_$index { width: ${image.size[0] * image.transform[0]}px; height: ${image.size[1] * image.transform[3]}px; ${transform.toCssTransformString()} transform-origin: ${-image.transform[4]}px ${-image.transform[5]}px; }")
+                                                raw(".main_frame_${currentFrame}_$index { width: ${image.size[0] * image.transform[0]}px; height: ${image.size[1] * image.transform[3]}px; ${transform.toCssTransformString()} transform-origin: ${-image.transform[4]}px ${-image.transform[5]}px; filter: brightness(${change.color?.average()}); }")
                                             }
                                         }
                                         img(
