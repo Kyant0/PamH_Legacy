@@ -1,5 +1,3 @@
-import kotlin.math.PI
-
 data class TransformData(
     val a: Double = 1.0,
     val b: Double = 0.0,
@@ -9,8 +7,6 @@ data class TransformData(
     val x: Double = 0.0,
     val y: Double = 0.0
 ) {
-    private val rotationRad = rotate * 2000 * PI
-
     infix fun then(other: TransformData): TransformData {
         return TransformData(
             a = this.a * other.a + this.b * other.c,
@@ -24,7 +20,7 @@ data class TransformData(
     }
 
     fun toCssTransformString(): String {
-        return "transform: matrix($a, $b, $c, $d, $x, $y) rotate(${rotationRad}rad);"
+        return "transform: matrix($a, $b, $c, $d, $x, $y) rotate(${rotate}rad);"
     }
 
     companion object {
