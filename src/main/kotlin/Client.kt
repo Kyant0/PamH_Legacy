@@ -63,22 +63,22 @@ fun Node.body() {
                                 frame.remove.forEach {
                                     frames.remove(it.index)
                                 }
-                                frames.forEach { (index, change) ->
-                                    if (resMap.containsKey(index) && change.color?.getOrNull(3) != 0.0) {
-                                        val src = sprites[resMap.getValue(index)]
-                                        val image = images.find { it.name == src }!!
-                                        val transform =
-                                            TransformData.parse(image.transform) then TransformData.parse(change.transform)
-                                        style {
-                                            unsafe {
-                                                raw(".main_frame_${currentFrame}_$index { width: ${image.size[0] * image.transform[0]}px; height: ${image.size[1] * image.transform[3]}px; ${transform.toCssTransformString()} transform-origin: ${-image.transform[4]}px ${-image.transform[5]}px; }")
-                                            }
+                                frames.filter { (index, change) ->
+                                    resMap.containsKey(index) && change.color?.getOrNull(3) != 0.0
+                                }.forEach { (index, change) ->
+                                    val src = sprites[resMap.getValue(index)]
+                                    val image = images.find { it.name == src }!!
+                                    val transform =
+                                        TransformData.parse(image.transform) then TransformData.parse(change.transform)
+                                    style {
+                                        unsafe {
+                                            raw(".main_frame_${currentFrame}_$index { width: ${image.size[0] * image.transform[0]}px; height: ${image.size[1] * image.transform[3]}px; ${transform.toCssTransformString()} transform-origin: ${-image.transform[4]}px ${-image.transform[5]}px; }")
                                         }
-                                        img(
-                                            src = src,
-                                            classes = "image main_frame_${currentFrame}_$index"
-                                        )
                                     }
+                                    img(
+                                        src = src,
+                                        classes = "image main_frame_${currentFrame}_$index"
+                                    )
                                 }
                             }
                         }
