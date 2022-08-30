@@ -28,7 +28,7 @@ private val json = Json {
 
 fun Node.body() {
     val name = "peashooter"
-    val animationIndex = 0
+    val animationIndex = 1
     append {
         window.fetch(Request("$name/$name.pam.json")).then { response ->
             response.text().then { text ->
@@ -40,6 +40,11 @@ fun Node.body() {
                     images[it.frame[0].append[0].resource].name
                 }
                 val resMap = mutableMapOf<Int, Int>()
+                data.mainSprite.frame.forEach { frame ->
+                    resMap += frame.append.associate {
+                        it.index to it.resource
+                    }
+                }
                 val animations = data.mainSprite.frame.map { it.label }.filterNot { it == null }
                 val startFrameIndex = data.mainSprite.frame.indexOfFirst {
                     it.label == animations[animationIndex]
@@ -56,30 +61,27 @@ fun Node.body() {
                         append {
                             div("frame_$name") {
                                 val frame = data.mainSprite.frame[currentFrame]
-                                resMap += frame.append.associate {
-                                    it.index to it.resource
-                                }
                                 frames += frame.change.associateBy { it.index }
                                 frame.remove.forEach {
                                     frames.remove(it.index)
                                 }
-                                frames.filter { (index, change) ->
-                                    resMap.containsKey(index) && change.color?.getOrNull(3) != 0.0
-                                }.forEach { (index, change) ->
-                                    val src = sprites[resMap.getValue(index)]
-                                    val image = images.find { it.name == src }!!
-                                    val transform =
-                                        TransformData.parse(image.transform) then TransformData.parse(change.transform)
-                                    style {
-                                        unsafe {
-                                            raw(".main_frame_${currentFrame}_$index { width: ${image.size[0] * image.transform[0]}px; height: ${image.size[1] * image.transform[3]}px; ${transform.toCssTransformString()} transform-origin: ${-image.transform[4]}px ${-image.transform[5]}px; }")
+                                frames
+                                    .filter { (_, change) -> change.color?.getOrNull(3) != 0.0 }
+                                    .forEach { (index, change) ->
+                                        val src = sprites[resMap.getValue(index)]
+                                        val image = images.find { it.name == src }!!
+                                        val transform =
+                                            TransformData.parse(image.transform) then TransformData.parse(change.transform)
+                                        style {
+                                            unsafe {
+                                                raw(".main_frame_${currentFrame}_$index { width: ${image.size[0] * image.transform[0]}px; height: ${image.size[1] * image.transform[3]}px; ${transform.toCssTransformString()} transform-origin: ${-image.transform[4]}px ${-image.transform[5]}px; }")
+                                            }
                                         }
+                                        img(
+                                            src = src,
+                                            classes = "image main_frame_${currentFrame}_$index"
+                                        )
                                     }
-                                    img(
-                                        src = src,
-                                        classes = "image main_frame_${currentFrame}_$index"
-                                    )
-                                }
                             }
                         }
                         delay(1000L / data.frameRate)
