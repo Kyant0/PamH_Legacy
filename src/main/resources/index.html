@@ -12,6 +12,130 @@
     }
 </style>
 <body>
-<script src="PamH.js"></script>
+<div id="animations"></div>
+<div id="frame"></div>
+<script src="https://unpkg.com/json5@2/dist/index.min.js"></script>
+<script>
+    class TransformData {
+        constructor(a = 1.0, b = 0.0, c = 0.0, d = 1.0, rotate = 0.0, x = 0.0, y = 0.0) {
+            this.a = a
+            this.b = b
+            this.c = c
+            this.d = d
+            this.rotate = rotate
+            this.x = x
+            this.y = y
+        }
+
+        then = (other) => new TransformData(
+            this.a * other.a + this.b * other.c,
+            this.a * other.b + this.b * other.d,
+            this.c * other.a + this.d * other.c,
+            this.c * other.b + this.d * other.d,
+            this.rotate + other.rotate,
+            this.x + other.x,
+            this.y + other.y
+        )
+
+        cssTransformString = () => `transform: matrix(${this.a}, ${this.b}, ${this.c}, ${this.d}, ${this.x}, ${this.y}) rotate(${this.rotate}rad);`
+
+        static parse = (data) => {
+            if (data.length === 6) {
+                return new TransformData(data[0], data[1], data[2], data[3], 0.0, data[4], data[5])
+            } else if (data.length === 3) {
+                return new TransformData(1.0, 0.0, 0.0, 1.0, data[0], data[1], data[2])
+            } else if (data.length === 2) {
+                return new TransformData(1.0, 0.0, 0.0, 1.0, 0.0, data[0], data[1])
+            }
+        }
+    }
+</script>
+<!--suppress CssUnusedSymbol, JSDeprecatedSymbols, JSUnresolvedVariable -->
+<script>
+    const params = new URLSearchParams(window.location.search)
+    const filePath = params.get("file") || "http://127.0.0.1:8887/initial/plant/peashooter/peashooter.pam.json"
+    const folder = filePath.substring(0, filePath.lastIndexOf("/"))
+    const file = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.length)
+    const animationIndex = parseInt(params.get("animation_index")) || 0
+
+    const animationsElement = document.querySelector(`#animations`)
+    const frameElement = document.querySelector(`#frame`)
+
+    window.fetch(new Request(`${folder}/${file}`)).then(response => {
+        response.text().then(text => {
+            const data = JSON5.parse(text)
+
+            const images = data.image.map(it => {
+                it.name = `${folder}/${it.name.substring(0, it.name.indexOf("|"))}.png`
+                return it
+            })
+            const sprites = data.sprite.map(it => images[it.frame[0].append[0].resource].name)
+            let resMap = new Map()
+            data.main_sprite.frame.forEach(frame => {
+                frame.append.forEach(it => {
+                    resMap.set(it.index, it.resource)
+                })
+            })
+
+            const animations = data.main_sprite.frame.map(it => it.label).filter(it => it != null)
+            animations.forEach((it, index) => {
+                animationsElement.innerHTML += `<button onclick="location.href = location.href.replace(/animation_index=\\d+/, 'animation_index=${index}')">${it}</button>`
+            })
+
+            const startFrameIndex = data.main_sprite.frame.map(it => it.label).indexOf(animations[animationIndex])
+            let endFrameIndex = data.main_sprite.frame.map(it => it.label).indexOf(animations[animationIndex + 1])
+            if (endFrameIndex === -1) {
+                endFrameIndex = data.main_sprite.frame.length - 1
+            }
+            const frameCount = endFrameIndex - startFrameIndex - 1
+            let localCurrentFrame = 0
+            let frames = new Map()
+
+            for (let i = 0; i < 100; i++) {
+                setTimeout(() => {
+                    const currentFrame = startFrameIndex + localCurrentFrame
+                    const frame = data.main_sprite.frame[currentFrame]
+                    if (currentFrame === startFrameIndex) {
+                        frames.clear()
+                    }
+                    frame.change.forEach(it => {
+                        it.color = it.color || frames.get(it.index)?.color
+                        frames.set(it.index, it)
+                    })
+                    frame.remove.forEach(it => {
+                        frames.delete(it.index)
+                    })
+
+                    frameElement.innerHTML = ``
+                    frames.forEach((change, index) => {
+                        if (change.color?.[3] !== 0.0 && resMap.has(index)) {
+                            const src = sprites[resMap.get(index)]
+                            const image = images.find(it => it.name === src)
+                            const transform = TransformData.parse(image.transform).then(TransformData.parse(change.transform))
+                            frameElement.innerHTML += `<style>
+.main_frame_${currentFrame}_${index} {
+width: ${image.size[0] * image.transform[0]}px;
+height: ${image.size[1] * image.transform[3]}px;
+${transform.cssTransformString()}
+transform-origin: ${-image.transform[4]}px ${-image.transform[5]}px;
+filter: brightness(${(change.color?.[0] + change.color?.[1] + change.color?.[2]) / 3 || 1});
+opacity: ${change.color?.[3] || 1};
+}
+</style>`
+                            frameElement.innerHTML += `<img
+src="${src}"
+alt="${src}"
+class="image main_frame_${currentFrame}_${index}">`
+                        }
+                    })
+                    frameElement.innerHTML += `</div>`
+
+                    localCurrentFrame += 1
+                    localCurrentFrame = localCurrentFrame % frameCount
+                }, 1000 / data.frame_rate * i)
+            }
+        })
+    })
+</script>
 </body>
 </html>

@@ -6,3 +6,9 @@
 
 - IntelliJ IDEA
 - TwinKleS Toolkit
+- _Web Server for Chrome_ extension (Select path to ```~\extract\images\1536``` and enable **Set CORS headers**)
+
+## Examples
+
+- http://localhost:8080/?file=http://127.0.0.1:8887/initial/plant/peashooter/peashooter.pam.json&animation_index=1
+- http://localhost:8080/?file=http://127.0.0.1:8887/initial/plant/pumpkin/pumpkin.pam.json&animation_index=3

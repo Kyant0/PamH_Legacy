@@ -30,7 +30,7 @@ private val json = Json {
 fun Node.body() {
     val params = URLSearchParams(window.location.search)
     val name = params.get("name") ?: "peashooter"
-    val animationIndex = params.get("animationIndex")?.toIntOrNull() ?: 0
+    val animationIndex = params.get("animation_index")?.toIntOrNull() ?: 0
     append {
         window.fetch(Request("$name/$name.pam.json")).then { response ->
             response.text().then { text ->
@@ -55,16 +55,15 @@ fun Node.body() {
                     it.label == animations.getOrElse(animationIndex + 1) {}
                 }.takeIf { it != -1 } ?: data.mainSprite.frame.lastIndex
                 val frameCount = endFrameIndex - startFrameIndex - 1
-                val initialFrame = data.mainSprite.frame.indexOfFirst { it.label == animations[animationIndex] }
                 var localCurrentFrame = 0
                 val frames = mutableMapOf<Int, Change>()
                 CoroutineScope(Dispatchers.Main).launch {
                     while (true) {
-                        val currentFrame = initialFrame + localCurrentFrame
+                        val currentFrame = startFrameIndex + localCurrentFrame
                         append {
                             div("frame_$name") {
                                 val frame = data.mainSprite.frame[currentFrame]
-                                if (currentFrame == initialFrame) {
+                                if (currentFrame == startFrameIndex) {
                                     frames.clear()
                                 }
                                 frame.change.forEach {
