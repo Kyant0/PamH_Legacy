@@ -79,7 +79,13 @@
 
             const animations = data.main_sprite.frame.map(it => it.label).filter(it => it != null)
             animations.forEach((it, index) => {
-                animationsElement.innerHTML += `<button onclick="location.href = location.href.replace(/animation_index=\\d+/, 'animation_index=${index}')">${it}</button>`
+                animationsElement.innerHTML += `<button onclick="
+if (location.href.match(/animation_index=\\d+/)) {
+    location.href = location.href.replace(/animation_index=\\d+/, 'animation_index=${index}')
+} else {
+    location.href = '${location.href}&animation_index=${index}'
+}
+">${it}</button>`
             })
 
             const startFrameIndex = data.main_sprite.frame.map(it => it.label).indexOf(animations[animationIndex])
