@@ -14,6 +14,7 @@ import kotlinx.html.unsafe
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import org.w3c.dom.Node
+import org.w3c.dom.url.URLSearchParams
 import org.w3c.fetch.Request
 
 fun main() {
@@ -27,8 +28,9 @@ private val json = Json {
 }
 
 fun Node.body() {
-    val name = "peashooter"
-    val animationIndex = 0
+    val params = URLSearchParams(window.location.search)
+    val name = params.get("name") ?: "peashooter"
+    val animationIndex = params.get("animationIndex")?.toIntOrNull() ?: 0
     append {
         window.fetch(Request("$name/$name.pam.json")).then { response ->
             response.text().then { text ->
