@@ -97,7 +97,7 @@ if (location.href.match(/animation_index=\\d+/)) {
             let localCurrentFrame = 0
             let frames = new Map()
 
-            for (let i = 0; i < 100; i++) {
+            for (let i = 0; i < frameCount; i++) {
                 setTimeout(() => {
                     const currentFrame = startFrameIndex + localCurrentFrame
                     const frame = data.main_sprite.frame[currentFrame]
